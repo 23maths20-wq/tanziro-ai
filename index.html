@@ -6,8 +6,36 @@
 <title>Tanziro AI - Ultimate 16 Mode AI</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236c5ce7'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle' fill='white'%3E🐉%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- PWA Meta Tags -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#6c5ce7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tanziro AI">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Tanziro AI">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%236c5ce7'/%3E%3Cstop offset='100%25' stop-color='%2300cec9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='192' height='192' rx='40' fill='url(%23g)'/%3E%3Ctext x='96' y='130' font-size='110' text-anchor='middle' fill='white'%3E🐉%3C/text%3E%3C/svg%3E">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+/* Install Button */
+.install-prompt{position:fixed;bottom:80px;right:14px;z-index:700;background:linear-gradient(135deg,var(--p),var(--s));color:white;padding:14px 18px;border-radius:14px;display:none;align-items:center;gap:10px;cursor:pointer;box-shadow:0 8px 24px rgba(108,92,231,.5);animation:bounceIn .5s ease-out;max-width:300px;border:none;font-family:inherit;font-size:13px;font-weight:500}
+.install-prompt.show{display:flex}
+.install-prompt:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(108,92,231,.6)}
+.install-prompt i.main-ic{font-size:22px}
+.install-prompt-content{flex:1;text-align:left}
+.install-prompt-content strong{display:block;font-size:13px;margin-bottom:2px}
+.install-prompt-content small{display:block;font-size:10px;opacity:.9}
+.install-close{background:rgba(255,255,255,.2);border:none;color:white;width:24px;height:24px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.install-close:hover{background:rgba(255,255,255,.3)}
+@keyframes bounceIn{0%{opacity:0;transform:translateY(20px) scale(.9)}50%{opacity:1;transform:translateY(-5px) scale(1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.update-banner{position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,var(--ok),var(--s));color:white;padding:10px 14px;text-align:center;font-size:12px;font-weight:500;z-index:999;display:none;align-items:center;justify-content:center;gap:10px;animation:slideDown .3s ease-out}
+.update-banner.show{display:flex}
+.update-banner button{background:white;color:var(--ok);border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
+@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+.offline-badge{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--er);color:white;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600;z-index:999;display:none;align-items:center;gap:5px}
+.offline-badge.show{display:flex}
+@media(max-width:768px){.install-prompt{bottom:90px;right:10px;left:10px;max-width:none}}
+  
+  *{margin:0;padding:0;box-sizing:border-box}
 :root{--p:#6c5ce7;--p2:#a29bfe;--s:#00cec9;--ac:#fd79a8;--ok:#00b894;--wr:#fdcb6e;--er:#d63031;--in:#0984e3;--b1:#0a0a1a;--b2:#12122a;--b3:#1a1a3e;--b4:#1e1e42;--b5:#252552;--bi:#16163a;--t1:#e8e8f0;--t2:#a0a0c0;--t3:#6868a0;--bd:#2a2a5a}
 [data-theme=light]{--b1:#f0f2f5;--b2:#fff;--b3:#e8eaf0;--b4:#fff;--b5:#e8e8f0;--bi:#f5f5fa;--t1:#1a1a2e;--t2:#4a4a6a;--t3:#8888aa;--bd:#d0d0e0}
 body{font-family:'Segoe UI',sans-serif;background:var(--b1);color:var(--t1);display:flex;height:100vh;overflow:hidden}
@@ -254,6 +282,189 @@ body{font-family:'Segoe UI',sans-serif;background:var(--b1);color:var(--t1);disp
 </div>
 
 <script>
+
+  // ═══════════════════════════════════════
+// PWA SETUP - Service Worker + Install
+// ═══════════════════════════════════════
+
+let deferredPrompt = null;
+let installPromptShown = false;
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then((reg) => {
+        console.log('✅ Service Worker registered:', reg.scope);
+        
+        // Check for updates every hour
+        setInterval(() => reg.update(), 3600000);
+        
+        // Handle updates
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              showUpdateBanner();
+            }
+          });
+        });
+      })
+      .catch((err) => console.warn('SW registration failed:', err));
+  });
+
+  // Listen for SW updates
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+}
+
+// Install Prompt Handler
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Don't show if already shown this session or dismissed before
+  if (!installPromptShown && !localStorage.getItem('TZ_INSTALL_DISMISSED')) {
+    setTimeout(() => showInstallPrompt(), 3000); // Show after 3 sec
+  }
+});
+
+// Show install prompt
+function showInstallPrompt() {
+  if (!deferredPrompt || installPromptShown) return;
+  installPromptShown = true;
+  
+  const prompt = document.createElement('div');
+  prompt.className = 'install-prompt show';
+  prompt.id = 'installPrompt';
+  prompt.innerHTML = `
+    <i class="fas fa-download main-ic"></i>
+    <div class="install-prompt-content">
+      <strong>📲 Install Tanziro AI</strong>
+      <small>Get app-like experience!</small>
+    </div>
+    <button class="install-close" onclick="dismissInstall(event)">
+      <i class="fas fa-times"></i>
+    </button>
+  `;
+  prompt.onclick = installApp;
+  document.body.appendChild(prompt);
+}
+
+// Install the app
+function installApp() {
+  if (!deferredPrompt) return;
+  
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then((choice) => {
+    if (choice.outcome === 'accepted') {
+      toast('🎉 Tanziro AI installed!', 'success');
+    }
+    deferredPrompt = null;
+    const p = document.getElementById('installPrompt');
+    if (p) p.remove();
+  });
+}
+
+// Dismiss install
+function dismissInstall(e) {
+  e.stopPropagation();
+  const p = document.getElementById('installPrompt');
+  if (p) p.remove();
+  localStorage.setItem('TZ_INSTALL_DISMISSED', '1');
+  setTimeout(() => {
+    localStorage.removeItem('TZ_INSTALL_DISMISSED'); // Reset after 7 days
+  }, 7 * 24 * 60 * 60 * 1000);
+}
+
+// App installed event
+window.addEventListener('appinstalled', () => {
+  console.log('✅ App installed!');
+  toast('🎉 Tanziro AI added to home screen!', 'success');
+  deferredPrompt = null;
+});
+
+// Update banner
+function showUpdateBanner() {
+  const banner = document.createElement('div');
+  banner.className = 'update-banner show';
+  banner.innerHTML = `
+    <i class="fas fa-sync-alt"></i>
+    <span>New version available!</span>
+    <button onclick="updateApp()">Update Now</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+function updateApp() {
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+  }
+}
+
+// Online/Offline detection
+function updateOnlineStatus() {
+  let badge = document.getElementById('offlineBadge');
+  if (!navigator.onLine) {
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'offlineBadge';
+      badge.className = 'offline-badge show';
+      badge.innerHTML = '<i class="fas fa-wifi"></i> Offline Mode';
+      document.body.appendChild(badge);
+    }
+  } else if (badge) {
+    badge.remove();
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// iOS Install Instructions
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+function isInStandaloneMode() {
+  return ('standalone' in window.navigator) && window.navigator.standalone;
+}
+
+// Show iOS install hint
+window.addEventListener('load', () => {
+  if (isIOS() && !isInStandaloneMode() && !localStorage.getItem('TZ_IOS_HINT')) {
+    setTimeout(() => {
+      const hint = document.createElement('div');
+      hint.className = 'install-prompt show';
+      hint.innerHTML = `
+        <i class="fas fa-info-circle main-ic"></i>
+        <div class="install-prompt-content">
+          <strong>📱 Install on iOS</strong>
+          <small>Tap Share → "Add to Home Screen"</small>
+        </div>
+        <button class="install-close" onclick="this.parentElement.remove();localStorage.setItem('TZ_IOS_HINT','1')">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      document.body.appendChild(hint);
+    }, 5000);
+  }
+});
+
+// URL Shortcut handler (?mode=chat from manifest)
+window.addEventListener('load', () => {
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get('mode');
+  if (mode && MODES && MODES[mode]) {
+    setTimeout(() => setMode(mode), 500);
+  }
+});
+
+console.log('🐉 Tanziro AI PWA Ready ⚡');
+
 // ═══════════════════════════════════════
 // TANZIRO AI v8 - 16 MODES COMBINED
 // ═══════════════════════════════════════
