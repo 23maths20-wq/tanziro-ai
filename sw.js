@@ -1,5 +1,5 @@
-// Tanziro AI Service Worker v1.0
-const CACHE_NAME = 'tanziro-ai-v1.0';
+// Tanziro AI Service Worker v1.2
+const CACHE_NAME = 'tanziro-ai-v1.2';
 const RUNTIME_CACHE = 'tanziro-runtime-v1';
 
 // Files to cache on install
