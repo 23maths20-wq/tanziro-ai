@@ -469,9 +469,9 @@ console.log('🐉 Tanziro AI PWA Ready ⚡');
 // TANZIRO AI v8 - 16 MODES COMBINED
 // ═══════════════════════════════════════
 
-// ⚠️ BACKEND URL - Change to your Cloudflare Worker URL
-// If empty, will ask user for API key instead
-var BACKEND = "tanziro-ai-backend.23maths20.workers.dev"
+// Backend URL - leave empty to use user's API key
+// To use backend: 'https://your-worker.workers.dev'
+var BACKEND = 'tanziro-ai-backend.23maths20.workers.dev';
 
 var KEY = localStorage.getItem('TZ_KEY') || '';
 var MDL = localStorage.getItem('TZ_MDL') || 'nvidia/nemotron-nano-9b-v2:free';
